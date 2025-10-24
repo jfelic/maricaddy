@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model ADMIN_JOBS {
+  client_id              Int
+  vessel_id              Int
+  contractor_id          Int
+  job_id                 Int       @id @default(autoincrement())
+  start                  DateTime  @db.Date
+  end                    DateTime? @db.Date
+  contractor_daily_rate  Decimal?  @db.Decimal(10, 2)
+  contractor_hourly_rate Decimal?  @db.Decimal(10, 2)
+  client_rate            Decimal?  @db.Decimal(10, 2)
+  role                   String    @db.VarChar(100)
+  agency_id              Int       @default(1)
+  invoice_number         String?   @db.VarChar(100)
+  purchase_order         String?   @db.VarChar(100)
+}
+
+model AGENCIES {
+  agency_id  Int        @id @default(autoincrement())
+  name       String     @unique(map: "name") @db.VarChar(255)
+  email      String?    @db.VarChar(255)
+  phone      String?    @db.VarChar(20)
+  address    String?    @db.VarChar(500)
+  created_at DateTime?  @default(now()) @db.Timestamp(0)
+  EXPENSES   EXPENSES[]
+}
+
+model CLIENTS {
+  client_id    Int        @id @default(autoincrement())
+  name         String?    @db.VarChar(255)
+  default_rate Decimal?   @db.Decimal(10, 2)
+  provisional  Boolean?   @default(false)
+  EXPENSES     EXPENSES[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model CLIENT_VESSELS {
+  client_id Int
+  vessel_id Int
+
+  @@ignore
+}
+
+model COMPETENCIES {
+  competency_id Int    @id @default(autoincrement())
+  name          String @db.VarChar(255)
+  job_id        Int
+  JOBS          JOBS   @relation(fields: [job_id], references: [job_id], onDelete: NoAction, onUpdate: NoAction, map: "COMPETENCIES_ibfk_1")
+
+  @@index([job_id], map: "job_id")
+}
+
+model CONTRACTORS {
+  contractor_id     Int                 @id @default(autoincrement())
+  last              String?             @db.VarChar(255)
+  first             String?             @db.VarChar(255)
+  default_rate      Decimal?            @db.Decimal(10, 2)
+  hourly_rate       Decimal?            @db.Decimal(10, 2)
+  user_id           Int?
+  address_1         String?             @db.VarChar(255)
+  address_2         String?             @db.VarChar(255)
+  city              String?             @db.VarChar(50)
+  state             String?             @db.VarChar(10)
+  zip               String?             @db.VarChar(10)
+  bus_name          String?             @db.VarChar(255)
+  bus_type          Boolean?            @default(false)
+  bound_to          Int?
+  USERS             USERS?              @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "CONTRACTORS_ibfk_1")
+  EXPENSES          EXPENSES[]
+  INVOICES          INVOICES[]          @ignore
+  QUALIFICATIONS    QUALIFICATIONS[]    @ignore
+  TIMESHEET_ENTRIES TIMESHEET_ENTRIES[]
+
+  @@index([user_id], map: "user_id")
+}
+
+model COUPON_CODES {
+  coupon_id           Int       @id @default(autoincrement())
+  code                String    @unique(map: "code") @db.VarChar(50)
+  created_at          DateTime? @default(now()) @db.Timestamp(0)
+  redeemed_at         DateTime? @db.Timestamp(0)
+  redeemed_by_user_id Int?
+  USERS               USERS?    @relation(fields: [redeemed_by_user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "COUPON_CODES_ibfk_1")
+
+  @@index([redeemed_by_user_id], map: "redeemed_by_user_id")
+}
+
+model EXPENSES {
+  expense_id    Int               @id @default(autoincrement())
+  contractor_id Int?
+  amount        Decimal           @db.Decimal(10, 2)
+  currency      EXPENSES_currency @default(USD)
+  description   String            @db.VarChar(255)
+  expense_date  DateTime          @db.Date
+  image_path    String?           @db.VarChar(255)
+  agency_id     Int?
+  client_id     Int?
+  created_at    DateTime?         @default(now()) @db.Timestamp(0)
+  CONTRACTORS   CONTRACTORS?      @relation(fields: [contractor_id], references: [contractor_id], onUpdate: NoAction, map: "EXPENSES_ibfk_1")
+  AGENCIES      AGENCIES?         @relation(fields: [agency_id], references: [agency_id], onUpdate: NoAction, map: "EXPENSES_ibfk_2")
+  CLIENTS       CLIENTS?          @relation(fields: [client_id], references: [client_id], onUpdate: NoAction, map: "EXPENSES_ibfk_3")
+
+  @@index([agency_id], map: "agency_id")
+  @@index([client_id], map: "client_id")
+  @@index([contractor_id], map: "contractor_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model INVOICES {
+  contractor_id  Int
+  invoice_type   Int
+  generated_date DateTime    @db.Date
+  filename       String      @db.VarChar(100)
+  first_day      DateTime    @db.Date
+  CONTRACTORS    CONTRACTORS @relation(fields: [contractor_id], references: [contractor_id], onDelete: NoAction, onUpdate: NoAction, map: "INVOICES_ibfk_1")
+
+  @@index([contractor_id], map: "contractor_id")
+  @@ignore
+}
+
+model JOBS {
+  client_id              Int
+  vessel_id              Int
+  contractor_id          Int
+  job_id                 Int                 @id @default(autoincrement())
+  start                  DateTime            @db.Date
+  end                    DateTime?           @db.Date
+  contractor_rate        Decimal?            @db.Decimal(10, 2)
+  contractor_hourly_rate Decimal?            @db.Decimal(10, 2)
+  client_rate            Decimal             @db.Decimal(10, 2)
+  position               String?             @db.VarChar(50)
+  provisional            Boolean?            @default(false)
+  agency                 String?             @db.VarChar(255)
+  admin                  Boolean             @default(false)
+  COMPETENCIES           COMPETENCIES[]
+  TIMESHEET_ENTRIES      TIMESHEET_ENTRIES[]
+}
+
+model JOB_SOFTWARE {
+  job_id        Int
+  job_type      JOB_SOFTWARE_job_type
+  software_name String                @db.VarChar(100)
+
+  @@id([job_id, job_type, software_name])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model POSITIONAL_RATES {
+  client_id    Int
+  title        String   @db.VarChar(50)
+  default_rate Decimal  @db.Decimal(10, 2)
+  provisional  Boolean? @default(false)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model QUALIFICATIONS {
+  contractor_id Int?
+  quali         String?      @db.VarChar(255)
+  expiry        DateTime?    @db.Date
+  image_id      String?      @db.VarChar(40)
+  CONTRACTORS   CONTRACTORS? @relation(fields: [contractor_id], references: [contractor_id], onDelete: NoAction, onUpdate: NoAction, map: "QUALIFICATIONS_ibfk_1")
+
+  @@index([contractor_id], map: "contractor_id")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SESSIONS {
+  user_id     Int
+  session_key String   @db.VarChar(50)
+  good_until  DateTime @db.Timestamp(0)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SPECIAL_DAYS {
+  job_id          Int
+  start_day       DateTime          @db.Date
+  type            SPECIAL_DAYS_type
+  client_rate     Decimal           @db.Decimal(10, 2)
+  contractor_rate Decimal           @db.Decimal(10, 2)
+  end_day         DateTime?         @db.Date
+
+  @@ignore
+}
+
+model TIMESHEET_ENTRIES {
+  entry_id      Int                        @id @default(autoincrement())
+  job_id        Int
+  job_type      TIMESHEET_ENTRIES_job_type
+  contractor_id Int
+  entry_date    DateTime                   @db.Date
+  hours_worked  Decimal                    @db.Decimal(5, 2)
+  description   String?                    @db.Text
+  status        TIMESHEET_ENTRIES_status?  @default(pending)
+  created_at    DateTime?                  @default(now()) @db.Timestamp(0)
+  updated_at    DateTime?                  @default(now()) @db.Timestamp(0)
+  JOBS          JOBS                       @relation(fields: [job_id], references: [job_id], onDelete: NoAction, onUpdate: NoAction, map: "TIMESHEET_ENTRIES_ibfk_1")
+  CONTRACTORS   CONTRACTORS                @relation(fields: [contractor_id], references: [contractor_id], onDelete: NoAction, onUpdate: NoAction, map: "TIMESHEET_ENTRIES_ibfk_2")
+
+  @@unique([job_id, job_type, contractor_id, entry_date], map: "unique_timesheet_entry")
+  @@index([contractor_id], map: "contractor_id")
+}
+
+model USERS {
+  user_id             Int                        @id @default(autoincrement())
+  username            String                     @unique(map: "uk_users_username") @db.VarChar(255)
+  hash                String                     @db.VarChar(255)
+  is_admin            Boolean?
+  email               String                     @unique(map: "uk_users_email") @db.VarChar(255)
+  email_verified      Boolean?                   @default(false)
+  subscription_status USERS_subscription_status? @default(inactive)
+  verification_token  String?                    @db.VarChar(255)
+  created_at          DateTime?                  @default(now()) @db.Timestamp(0)
+  coupon_redeemed_at  DateTime?                  @db.Timestamp(0)
+  CONTRACTORS         CONTRACTORS[]
+  COUPON_CODES        COUPON_CODES[]
+}
+
+model USER_JOBS {
+  client_id              Int
+  vessel_id              Int
+  contractor_id          Int
+  job_id                 Int               @id @default(autoincrement())
+  start                  DateTime          @db.Date
+  end                    DateTime?         @db.Date
+  contractor_daily_rate  Decimal?          @db.Decimal(10, 2)
+  contractor_hourly_rate Decimal?          @db.Decimal(10, 2)
+  client_rate            Decimal?          @db.Decimal(10, 2)
+  role                   String            @db.VarChar(100)
+  status                 USER_JOBS_status? @default(Pending)
+  agency_id              Int               @default(1)
+  invoice_number         String?           @db.VarChar(100)
+  purchase_order         String?           @db.VarChar(100)
+}
+
+model VESSELS {
+  vessel_id   Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  provisional Boolean? @default(false)
+}
+
+enum JOB_SOFTWARE_job_type {
+  ADMIN
+  USER
+}
+
+enum SPECIAL_DAYS_type {
+  PERDIEM
+  TRAVEL
+}
+
+enum TIMESHEET_ENTRIES_job_type {
+  ADMIN
+  USER
+}
+
+enum EXPENSES_currency {
+  CAD
+  USD
+}
+
+enum USERS_subscription_status {
+  inactive
+  active
+}
+
+enum TIMESHEET_ENTRIES_status {
+  pending
+  approved
+  rejected
+}
+
+enum USER_JOBS_status {
+  Pending
+  Approved
+  Rejected
+}
