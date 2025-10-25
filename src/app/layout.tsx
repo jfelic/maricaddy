@@ -50,26 +50,30 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`} // Make fonts available everywhere
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SidebarProvider>
-          <Sidebar>
-            <SidebarHeader>Maricaddy</SidebarHeader>
-            <SidebarContent>
-              {items.map((item) => (
-                // For each item, create a SidebarMenuItem
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />              {/* Renders the icon */}
-                      <span>{item.title}</span>  {/* Renders the title */}
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarContent>
-          </Sidebar>
-          {children}
+          <div className="flex min-h-screen w-full">
+            <Sidebar>
+              <SidebarHeader>Maricaddy</SidebarHeader>
+              <SidebarContent>
+                {items.map((item) => (
+                  // For each item, create a SidebarMenuItem
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <a href={item.url}>
+                        <item.icon />              {/* Renders the icon */}
+                        <span>{item.title}</span>  {/* Renders the title */}
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarContent>
+            </Sidebar>
+            <main className="flex-1 overflow-auto">
+              {children}
+            </main>
+          </div>
         </SidebarProvider>
       </body>
     </html>
