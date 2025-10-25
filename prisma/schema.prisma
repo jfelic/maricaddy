@@ -42,12 +42,11 @@ model CLIENTS {
   EXPENSES     EXPENSES[]
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model CLIENT_VESSELS {
   client_id Int
   vessel_id Int
 
-  @@ignore
+  @@id([client_id, vessel_id])
 }
 
 model COMPETENCIES {
